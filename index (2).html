@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Duelo de Campeones - Quiz de Fútbol y Primaria</title>
+  <!-- Fuente Inter y Fredoka para una estética deportiva y amigable -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js para efectos de sonido sin archivos externos -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Fredoka', 'Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    /* Estilos personalizados para el ambiente de vestuario/estadio bajo la lluvia */
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top, #0f2942 0%, #071321 60%, #040b14 100%);
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .font-display {
+      font-family: 'Fredoka', 'Inter', sans-serif;
+    }
+
+    /* Sutil textura de campo de fútbol en el fondo */
+    .pitch-bg {
+      background-image:
+        linear-gradient(rgba(16, 185, 129, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* Animaciones suaves */
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.35); }
+      50% { box-shadow: 0 0 24px 4px rgba(250, 204, 21, 0.55); }
+    }
+
+    .glow-gold {
+      animation: pulseGlow 2.2s infinite;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.94); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .animate-pop {
+      animation: popIn 0.25s ease-out forwards;
+    }
+
+    .option-btn {
+      transition: transform 0.14s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .option-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body class="pitch-bg selection:bg-amber-400 selection:text-slate-950">
+  <!-- Contenedor principal adaptable -->
+  <div id="app" class="min-h-screen flex flex-col justify-between max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6">
+
+    <!-- CABECERA SUPERIOR -->
+    <header class="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 backdrop-blur-md border border-slate-700/70 rounded-2xl px-4 py-3 shadow-xl">
+      <div class="flex items-center gap-3">
+        <!-- Icono SVG personalizado de balón y trofeo -->
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 shadow-lg shrink-0">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+            <path d="M4 22h16" />
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-lg sm:text-2xl font-bold tracking-tight text-white">
+              Duelo de Campeones
+            </h1>
+            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30">
+              Día de Lluvia · 1º a 4º Primaria
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400">
+            Estilo ¿Quién quiere ser millonario? · 100 preguntas sin repetir
+          </p>
+        </div>
+      </div>
+
+      <!-- Controles rápidos: Sonido y Reiniciar/Configurar -->
+      <div class="flex items-center gap-2">
+        <button
+          id="btn-sound"
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/70 text-xs sm:text-sm font-medium text-slate-200 transition cursor-pointer"
+          aria-label="Activar o desactivar sonido"
+        >
+          <span id="sound-icon">🔊</span>
+          <span id="sound-label" class="hidden sm:inline">Sonido ON</span>
+        </button>
+        <button
+          id="btn-setup-modal"
+          type="button"
+          class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600/70 text-xs sm:text-sm font-medium text-amber-300 transition cursor-pointer"
+        >
+          <span>⚙️</span>
+          <span>Equipos / Reglas</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- MARCADOR DE LOS 2 EQUIPOS -->
+    <section aria-label="Marcador de equipos" class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 my-4">
+      <!-- Equipo 1 -->
+      <div
+        id="card-team-0"
+        class="rounded-2xl p-3.5 sm:p-4 border-2 transition-all duration-300 bg-slate-900/80 border-slate-700/70 flex items-center justify-between gap-3"
+      >
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-2xl shrink-0">
+            ⚽
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span id="name-team-0" class="font-display text-lg sm:text-xl font-bold text-white truncate">
+                Equipo Relámpago
+              </span>
+              <span
+                id="badge-turn-0"
+                class="hidden text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-400 text-slate-950 shrink-0"
+              >
+                Tu turno
+              </span>
+            </div>
+            <p id="streak-team-0" class="text-xs text-slate-400">Racha: 0 aciertos</p>
+          </div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Puntos</div>
+          <div id="score-team-0" class="font-display text-2xl sm:text-3xl font-bold text-emerald-400">0</div>
+        </div>
+      </div>
+
+      <!-- Equipo 2 -->
+      <div
+        id="card-team-1"
+        class="rounded-2xl p-3.5 sm:p-4 border-2 transition-all duration-300 bg-slate-900/80 border-slate-700/70 flex items-center justify-between gap-3"
+      >
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-11 h-11 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-2xl shrink-0">
+            🧤
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span id="name-team-1" class="font-display text-lg sm:text-xl font-bold text-white truncate">
+                Equipo Trueno
+              </span>
+              <span
+                id="badge-turn-1"
+                class="hidden text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-400 text-slate-950 shrink-0"
+              >
+                Tu turno
+              </span>
+            </div>
+            <p id="streak-team-1" class="text-xs text-slate-400">Racha: 0 aciertos</p>
+          </div>
+        </div>
+        <div class="text-right shrink-0">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Puntos</div>
+          <div id="score-team-1" class="font-display text-2xl sm:text-3xl font-bold text-sky-400">0</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ZONA PRINCIPAL DEL JUEGO -->
+    <main class="flex-1 flex flex-col lg:flex-row gap-4 sm:gap-6 items-stretch">
+
+      <!-- PANEL CENTRAL: PREGUNTA, COMODINES Y OPCIONES -->
+      <div class="flex-1 bg-slate-900/85 backdrop-blur-md border border-slate-700/80 rounded-3xl p-4 sm:p-7 shadow-2xl flex flex-col justify-between">
+
+        <!-- Barra superior de pregunta: número, curso/nivel, valor en puntos y comodines -->
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-800">
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="q-counter" class="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-200 border border-slate-700">
+                Pregunta 1 / 20
+              </span>
+              <span id="q-course" class="text-xs sm:text-sm font-semibold px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                1º Primaria
+              </span>
+              <span id="q-category" class="text-xs sm:text-sm font-semibold px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
+                Matemáticas
+              </span>
+            </div>
+
+            <!-- Valor de la pregunta actual -->
+            <div class="flex items-center gap-1.5 bg-amber-400/15 border border-amber-400/40 px-3.5 py-1 rounded-full">
+              <span class="text-amber-300 text-xs font-semibold uppercase">Vale:</span>
+              <span id="q-points" class="font-display text-base sm:text-lg font-bold text-amber-300">+100 pts</span>
+            </div>
+          </div>
+
+          <!-- Comodines del equipo activo (estilo ¿Quién quiere ser millonario?) -->
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-xs text-slate-400 font-medium">
+              Comodines de <strong id="lifeline-team-name" class="text-white">Equipo Relámpago</strong>:
+            </span>
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                id="btn-5050"
+                type="button"
+                class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-purple-600/25 hover:bg-purple-600/40 disabled:opacity-35 disabled:pointer-events-none text-purple-200 border border-purple-400/40 transition cursor-pointer"
+                title="Elimina dos opciones incorrectas"
+              >
+                ✂️ 50:50
+              </button>
+              <button
+                id="btn-coach"
+                type="button"
+                class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-500/20 hover:bg-amber-500/35 disabled:opacity-35 disabled:pointer-events-none text-amber-200 border border-amber-400/40 transition cursor-pointer"
+                title="Pista del entrenador o compañero"
+              >
+                📣 Pista del Míster
+              </button>
+              <button
+                id="btn-double"
+                type="button"
+                class="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-emerald-500/20 hover:bg-emerald-500/35 disabled:opacity-35 disabled:pointer-events-none text-emerald-200 border border-emerald-400/40 transition cursor-pointer"
+                title="Si aciertas esta pregunta, ganas el DOBLE de puntos"
+              >
+                ⚡ Doble Gol (x2)
+              </button>
+            </div>
+          </div>
+
+          <!-- Caja de pista si se usa Pista del Míster -->
+          <div id="hint-box" class="hidden mt-3 p-3 rounded-2xl bg-amber-500/10 border border-amber-400/40 text-amber-200 text-xs sm:text-sm animate-pop">
+            <span class="font-bold">📣 El Míster dice: </span>
+            <span id="hint-text"></span>
+          </div>
+
+          <!-- Enunciado de la pregunta -->
+          <div class="my-5 sm:my-7 bg-gradient-to-br from-slate-800/90 to-slate-900 border-2 border-slate-700/80 rounded-2xl p-5 sm:p-7 text-center shadow-inner">
+            <p id="q-text" class="font-display text-xl sm:text-2xl md:text-3xl font-semibold text-white leading-snug">
+              Cargando pregunta...
+            </p>
+          </div>
+        </div>
+
+        <!-- Opciones A, B, C, D -->
+        <div>
+          <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            <!-- Generadas dinámicamente por JS -->
+          </div>
+
+          <!-- Retroalimentación tras responder y botón Siguiente -->
+          <div id="feedback-bar" class="hidden mt-5 p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pop">
+            <div class="space-y-1">
+              <div id="feedback-title" class="font-display text-lg sm:text-xl font-bold"></div>
+              <p id="feedback-detail" class="text-xs sm:text-sm text-slate-200"></p>
+            </div>
+            <button
+              id="btn-next"
+              type="button"
+              class="w-full sm:w-auto px-6 py-3 rounded-xl font-display font-bold text-base bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-lg transition cursor-pointer shrink-0"
+            >
+              Siguiente pregunta →
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL LATERAL: ESCALERA DEL MILLONARIO / RECORRIDO DE PUNTOS -->
+      <aside class="w-full lg:w-72 bg-slate-900/85 backdrop-blur-md border border-slate-700/80 rounded-3xl p-4 shadow-xl flex flex-col justify-between shrink-0">
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="font-display text-base sm:text-lg font-bold text-amber-300 flex items-center gap-1.5">
+              <span>🏆</span> Escalera de Puntos
+            </h2>
+            <span id="bank-remaining" class="text-xs text-slate-400 font-medium">100 en banco</span>
+          </div>
+
+          <!-- Lista de escalones (de mayor a menor como en el concurso) -->
+          <ol id="ladder-list" class="space-y-1.5 text-xs sm:text-sm">
+            <!-- Rellenado por JS -->
+          </ol>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 space-y-1.5">
+          <div class="flex justify-between">
+            <span>Rango de edad:</span>
+            <span class="text-slate-200 font-semibold">6 a 9 años</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Contenidos:</span>
+            <span class="text-slate-200 font-semibold">1º a 4º Primaria</span>
+          </div>
+          <div class="flex justify-between">
+            <span>Banco total:</span>
+            <span class="text-emerald-300 font-semibold">100 preguntas</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN / NUEVO PARTIDO -->
+  <div id="modal-setup" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl animate-pop">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-display text-xl sm:text-2xl font-bold text-white">
+          ⚽ Configurar Partido
+        </h2>
+        <button id="btn-close-modal" type="button" class="text-slate-400 hover:text-white text-xl px-2 py-1 cursor-pointer">
+          ✕
+        </button>
+      </div>
+
+      <form id="form-setup" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-emerald-300 mb-1">Nombre Equipo 1</label>
+            <input
+              id="input-team-0"
+              type="text"
+              maxlength="22"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-white text-sm focus:outline-none focus:border-emerald-400"
+              placeholder="Equipo Relámpago"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-sky-300 mb-1">Nombre Equipo 2</label>
+            <input
+              id="input-team-1"
+              type="text"
+              maxlength="22"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-white text-sm focus:outline-none focus:border-sky-400"
+              placeholder="Equipo Trueno"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Preguntas por partido</label>
+            <select
+              id="select-length"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-white text-sm focus:outline-none focus:border-amber-400"
+            >
+              <option value="10">10 preguntas (Partido rápido)</option>
+              <option value="16" selected>16 preguntas (8 por equipo)</option>
+              <option value="20">20 preguntas (10 por equipo)</option>
+              <option value="30">30 preguntas (Gran final)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Nivel / Curso</label>
+            <select
+              id="select-grade"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-white text-sm focus:outline-none focus:border-amber-400"
+            >
+              <option value="ALL" selected>Todos (1º a 4º Primaria)</option>
+              <option value="1º Primaria">1º Primaria (6-7 años)</option>
+              <option value="2º Primaria">2º Primaria (7-8 años)</option>
+              <option value="3º Primaria">3º Primaria (8-9 años)</option>
+              <option value="4º Primaria">4º Primaria (9 años)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-3.5 rounded-2xl bg-slate-800/70 border border-slate-700/70 text-xs text-slate-300 space-y-1">
+          <p class="font-bold text-amber-300">¿Cómo se juega?</p>
+          <p>• Responden por turnos. Cada acierto suma los puntos del escalón y hace crecer la racha (+25 pts extra por cada racha de 2 o más).</p>
+          <p>• Cada equipo tiene <strong>3 comodines</strong> para todo el partido: <strong>50:50</strong>, <strong>Pista del Míster</strong> y <strong>Doble Gol (x2)</strong>.</p>
+          <p>• Las preguntas ya usadas no se repiten hasta completar todo el banco de 100.</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button
+            type="button"
+            id="btn-cancel-modal"
+            class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-display font-bold text-sm sm:text-base shadow-lg cursor-pointer"
+          >
+            ⚽ ¡Empezar Partido!
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE FINAL DE PARTIDO -->
+  <div id="modal-gameover" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/85 backdrop-blur-md p-4">
+    <div class="bg-slate-900 border-2 border-amber-400/60 rounded-3xl max-w-lg w-full p-6 sm:p-8 text-center shadow-2xl animate-pop">
+      <div class="text-5xl mb-3">🏆</div>
+      <h2 id="gameover-title" class="font-display text-2xl sm:text-3xl font-bold text-amber-300 mb-2">
+        ¡Final del Partido!
+      </h2>
+      <p id="gameover-subtitle" class="text-slate-300 text-sm sm:text-base mb-6">
+        ¡Gran trabajo bajo la lluvia!
+      </p>
+
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="p-4 rounded-2xl bg-slate-800/90 border border-emerald-500/30">
+          <div id="final-name-0" class="font-display font-bold text-emerald-300 truncate">Equipo 1</div>
+          <div id="final-score-0" class="font-display text-3xl font-bold text-white mt-1">0</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-slate-800/90 border border-sky-500/30">
+          <div id="final-name-1" class="font-display font-bold text-sky-300 truncate">Equipo 2</div>
+          <div id="final-score-1" class="font-display text-3xl font-bold text-white mt-1">0</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button
+          id="btn-play-again"
+          type="button"
+          class="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-display font-bold text-base shadow-lg cursor-pointer"
+        >
+          🔄 Jugar Revancha
+        </button>
+        <button
+          id="btn-open-config-end"
+          type="button"
+          class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-600 cursor-pointer"
+        >
+          Cambiar Equipos / Nivel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * BANCO DE 100 PREGUNTAS EN CASTELLANO (1º a 4º de Primaria + Fútbol y cultura general)
+     * Cada pregunta incluye:
+     * - course: '1º Primaria' | '2º Primaria' | '3º Primaria' | '4º Primaria'
+     * - category: temática motivadora
+     * - q: enunciado claro para edades de 6 a 9 años
+     * - options: array de 4 opciones
+     * - answer: índice de la opción correcta (0..3)
+     * - hint: pista del Míster para el comodín "Pista del Míster"
+     */
+    const QUESTION_BANK = [
+      // ================= 1º PRIMARIA (6-7 años) - 25 preguntas =================
+      { course: "1º Primaria", category: "Matemáticas", q: "Si en un partido metes 3 goles en la primera parte y 2 en la segunda, ¿cuántos goles has marcado en total?", options: ["4 goles", "5 goles", "6 goles", "3 goles"], answer: 1, hint: "Suma 3 más 2 usando los dedos de una mano." },
+      { course: "1º Primaria", category: "Matemáticas", q: "¿Qué número viene justo después del 19?", options: ["18", "21", "20", "29"], answer: 2, hint: "Después de los diecinueve empieza la familia del veinte." },
+      { course: "1º Primaria", category: "Matemáticas", q: "En el banquillo hay 7 botellas de agua y se beben 3. ¿Cuántas quedan?", options: ["5 botellas", "3 botellas", "4 botellas", "10 botellas"], answer: 2, hint: "A 7 le quitamos 3." },
+      { course: "1º Primaria", category: "Matemáticas", q: "¿Cuántos lados tiene un triángulo?", options: ["2 lados", "3 lados", "4 lados", "5 lados"], answer: 1, hint: "La palabra 'tri' nos da una pista." },
+      { course: "1º Primaria", category: "Matemáticas", q: "Si tienes 2 monedas de 1 euro, ¿cuánto dinero tienes?", options: ["1 euro", "2 euros", "3 euros", "5 euros"], answer: 1, hint: "Una moneda de 1 euro más otra de 1 euro." },
+      { course: "1º Primaria", category: "Matemáticas", q: "¿Cuál es el número mayor?", options: ["14", "41", "24", "31"], answer: 1, hint: "Fíjate en el primer número: 4 decenas es más que 3, 2 o 1." },
+      { course: "1º Primaria", category: "Lengua", q: "¿Con qué letra empieza la palabra PELOTA?", options: ["B", "P", "T", "L"], answer: 1, hint: "Suena como 'pe' al principio." },
+      { course: "1º Primaria", category: "Lengua", q: "¿Cuál de estas palabras es un nombre de persona?", options: ["balón", "portería", "Sofía", "correr"], answer: 2, hint: "Los nombres propios empiezan con mayúscula." },
+      { course: "1º Primaria", category: "¿Cuántas sílabas tiene la palabra GOL?", options: ["1 sílaba", "2 sílabas", "3 sílabas", "4 sílabas"], answer: 0, hint: "Se pronuncia de un solo golpe de voz." },
+      { course: "1º Primaria", category: "Lengua", q: "¿Qué palabra rima con BALÓN?", options: ["camión", "campo", "árbol", "silbato"], answer: 0, hint: "Termina igual: en '-ón'." },
+      { course: "1º Primaria", category: "Lengua", q: "¿Cuál es la primera letra del abecedario?", options: ["E", "A", "O", "B"], answer: 1, hint: "Es la primera vocal." },
+      { course: "1º Primaria", category: "Ciencias", q: "¿Qué necesitamos cuando llueve mucho al ir al campo?", options: ["Gafas de sol", "Chubasquero y paraguas", "Bañador", "Abanico"], answer: 1, hint: "Sirve para no mojarnos con el agua de lluvia." },
+      { course: "1º Primaria", category: "Ciencias", q: "¿Cuál de estos animales es un mamífero?", options: ["Una rana", "Un perro", "Un pez payaso", "Una paloma"], answer: 1, hint: "Tiene pelo y mama leche cuando es cría." },
+      { course: "1º Primaria", category: "Ciencias", q: "¿Con qué sentido escuchamos el silbato del árbitro?", options: ["Con la vista", "Con el oído", "Con el gusto", "Con el olfato"], answer: 1, hint: "Está en nuestras orejas." },
+      { course: "1º Primaria", category: "Ciencias", q: "¿Cuántas estaciones tiene el año?", options: ["2 estaciones", "3 estaciones", "4 estaciones", "6 estaciones"], answer: 2, hint: "Primavera, verano, otoño e invierno." },
+      { course: "1º Primaria", category: "Fútbol", q: "¿De qué color suele ser la tarjeta que avisa a un jugador?", options: ["Verde", "Amarilla", "Azul", "Morada"], answer: 1, hint: "Es el color del sol o del plátano." },
+      { course: "1º Primaria", category: "Fútbol", q: "¿Dónde se coloca el balón para sacar un penalti?", options: ["En el córner", "En el punto de penalti", "En el banquillo", "En la grada"], answer: 1, hint: "Está marcado frente a la portería." },
+      { course: "1º Primaria", category: "Fútbol", q: "¿Qué parte del cuerpo puede usar el portero dentro de su área?", options: ["Solo los pies", "Las manos", "Solo la cabeza", "La espalda"], answer: 1, hint: "El portero lleva guantes para atrapar el balón." },
+      { course: "1º Primaria", category: "Fútbol", q: "Si un equipo lleva camiseta roja y pantalón blanco, ¿cuántos colores principales tiene su equipación?", options: ["1 color", "2 colores", "4 colores", "5 colores"], answer: 1, hint: "Rojo y blanco." },
+      { course: "1º Primaria", category: "Fútbol", q: "¿Cómo se llama el saque desde una de las esquinas del campo?", options: ["Saque de banda", "Saque de esquina o córner", "Saque de puerta", "Saque inicial"], answer: 1, hint: "Viene de la palabra inglesa 'corner'." },
+      { course: "1º Primaria", category: "Matemáticas", q: "¿Cuánto es 5 + 5?", options: ["8", "9", "10", "12"], answer: 2, hint: "Son todos los dedos de tus dos manos." },
+      { course: "1º Primaria", category: "Matemáticas", q: "Si un partido empieza a las 10 en punto y dura 1 hora, ¿a qué hora acaba?", options: ["A las 9", "A las 11", "A las 12", "A las 8"], answer: 1, hint: "Después de las 10 viene las 11." },
+      { course: "1º Primaria", category: "Lengua", q: "¿Cuál de estas palabras está escrita en plural?", options: ["balones", "árbol", "portero", "campo"], answer: 0, hint: "Habla de más de un balón y termina en '-es'." },
+      { course: "1º Primaria", category: "Ciencias", q: "¿Qué astro nos da luz y calor durante el día?", options: ["La Luna", "El Sol", "Una estrella fugaz", "Un cometa"], answer: 1, hint: "Aparece de día y nos da calorcito." },
+      { course: "1º Primaria", category: "Fútbol", q: "¿Cuál es el objetivo principal del fútbol?", options: ["Meter más goles que el rival", "Correr sin balón", "Hacer el saque de banda más largo", "Cambiar de camiseta"], answer: 0, hint: "Gana quien marca más goles en la portería contraria." },
+
+      // ================= 2º PRIMARIA (7-8 años) - 25 preguntas =================
+      { course: "2º Primaria", category: "Matemáticas", q: "¿Cuánto es 24 + 15?", options: ["39", "49", "29", "38"], answer: 0, hint: "Suma decenas: 20 + 10 = 30. Suma unidades: 4 + 5 = 9." },
+      { course: "2º Primaria", category: "Matemáticas", q: "¿Cuánto es 50 - 18?", options: ["42", "32", "28", "38"], answer: 1, hint: "A 50 le quitas 10 (quedan 40) y luego le quitas 8." },
+      { course: "2º Primaria", category: "Matemáticas", q: "¿Cuánto es 3 x 4?", options: ["7", "12", "14", "10"], answer: 1, hint: "Es lo mismo que sumar 4 + 4 + 4." },
+      { course: "2º Primaria", category: "Matemáticas", q: "¿Cuántos minutos tiene una hora?", options: ["30 minutos", "60 minutos", "100 minutos", "24 minutos"], answer: 1, hint: "Es un número redondo con un 6 y un 0." },
+      { course: "2º Primaria", category: "Matemáticas", q: "¿Qué número es par?", options: ["13", "27", "36", "41"], answer: 2, hint: "Los números pares terminan en 0, 2, 4, 6 u 8." },
+      { course: "2º Primaria", category: "Matemáticas", q: "Si tienes 4 equipos de 5 jugadores cada uno, ¿cuántos jugadores hay en total?", options: ["9 jugadores", "15 jugadores", "20 jugadores", "25 jugadores"], answer: 2, hint: "Multiplica 4 x 5." },
+      { course: "2º Primaria", category: "Lengua", q: "¿Qué palabra es un verbo (indica una acción)?", options: ["saltar", "red", "verde", "estadio"], answer: 0, hint: "Es algo que podemos hacer con las piernas." },
+      { course: "2º Primaria", category: "Lengua", q: "¿Qué palabra es un adjetivo en la frase 'El balón rápido'?", options: ["El", "balón", "rápido", "ninguna"], answer: 2, hint: "Dice cómo es el balón." },
+      { course: "2º Primaria", category: "Lengua", q: "¿Cuál es el sinónimo (significado parecido) de EMPEZAR?", options: ["Terminar", "Comenzar", "Perder", "Dormir"], answer: 1, hint: "Significa lo mismo que iniciar." },
+      { course: "2º Primaria", category: "Lengua", q: "¿Cuál es el antónimo (significado contrario) de GANAR?", options: ["Vencer", "Triunfar", "Perder", "Celebrar"], answer: 2, hint: "Es lo opuesto a ganar un partido." },
+      { course: "2º Primaria", category: "Lengua", q: "¿Qué signo se pone al final de una pregunta?", options: ["! !", "? ?", ", ,", ". ."], answer: 1, hint: "Lo usamos cuando preguntamos algo." },
+      { course: "2º Primaria", category: "Ciencias", q: "¿Cómo se llama el agua cuando cae de las nubes en gotas?", options: ["Nieve", "Lluvia", "Granizo", "Vapor"], answer: 1, hint: "Es lo que está pasando hoy y no nos deja entrenar fuera." },
+      { course: "2º Primaria", category: "Ciencias", q: "¿Qué parte de una planta suele estar bajo tierra y absorbe agua?", options: ["La flor", "La raíz", "La hoja", "El fruto"], answer: 1, hint: "Agarra la planta al suelo." },
+      { course: "2º Primaria", category: "Ciencias", q: "¿Qué hueso protege nuestro cerebro?", options: ["El fémur", "El cráneo", "Una costilla", "La rótula"], answer: 1, hint: "Es como un casco duro natural en la cabeza." },
+      { course: "2º Primaria", category: "Ciencias", q: "¿Cuántos días tiene una semana?", options: ["5 días", "6 días", "7 días", "30 días"], answer: 2, hint: "De lunes a domingo." },
+      { course: "2º Primaria", category: "Fútbol", q: "¿Cuántos jugadores de campo más el portero forman un equipo de fútbol 11?", options: ["10 jugadores de campo y 1 portero", "11 jugadores de campo y 1 portero", "9 jugadores de campo y 1 portero", "8 jugadores de campo y 1 portero"], answer: 0, hint: "10 + 1 suman 11." },
+      { course: "2º Primaria", category: "Fútbol", q: "¿Qué usa el árbitro para detener el juego?", options: ["Un tambor", "Un silbato", "Una trompeta", "Una campana"], answer: 1, hint: "Lo sopla con fuerza cuando hay falta o gol." },
+      { course: "2º Primaria", category: "Fútbol", q: "Si el balón sale por la línea de banda, ¿cómo se vuelve a poner en juego?", options: ["Con un córner", "Con un saque de banda", "Con un penalti", "Con un saque de centro"], answer: 1, hint: "Se saca con las dos manos desde la banda." },
+      { course: "2º Primaria", category: "Fútbol", q: "¿Qué es un 'hat-trick' o triplete en el fútbol?", options: ["Marcar 3 goles en un partido", "Parar 2 penaltis", "Cambiar 3 veces de botas", "Jugar 3 tiempos"], answer: 0, hint: "'Tri' viene de tres." },
+      { course: "2º Primaria", category: "Fútbol", q: "¿Por qué es importante calentar antes de jugar al fútbol?", options: ["Para gastar pilas", "Para preparar los músculos y evitar lesiones", "Para ensuciar las medias", "Para hacer tiempo"], answer: 1, hint: "Ayuda a que el cuerpo esté listo para el esfuerzo." },
+      { course: "2º Primaria", category: "Matemáticas", q: "¿Cuánto es el doble de 15?", options: ["20", "25", "30", "45"], answer: 2, hint: "Suma 15 + 15." },
+      { course: "2º Primaria", category: "Lengua", q: "¿Qué palabra lleva tilde?", options: ["futbol", "árbol", "balon", "campo"], answer: 1, hint: "Es una palabra llana terminada en 'l' que lleva acento gráfico." },
+      { course: "2º Primaria", category: "Ciencias", q: "¿Qué órgano bombea la sangre por todo nuestro cuerpo?", options: ["El estómago", "El corazón", "El pulmón", "El riñón"], answer: 1, hint: "Late más rápido cuando corremos." },
+      { course: "2º Primaria", category: "Geografía", q: "¿Cómo se llama el planeta en el que vivimos?", options: ["Marte", "Tierra", "Júpiter", "Venus"], answer: 1, hint: "Es el tercer planeta desde el Sol." },
+      { course: "2º Primaria", category: "Fútbol", q: "¿Qué significa jugar con 'fair play' o juego limpio?", options: ["Hacer trampas sin que se note", "Respetar las reglas, al rival y al árbitro", "No pasar nunca el balón", "Protestar siempre"], answer: 1, hint: "Es el valor más importante del deporte." },
+
+      // ================= 3º PRIMARIA (8-9 años) - 25 preguntas =================
+      { course: "3º Primaria", category: "Matemáticas", q: "¿Cuánto es 7 x 8?", options: ["54", "56", "64", "48"], answer: 1, hint: "5 x 8 = 40; suma dos ochos más (40 + 16)." },
+      { course: "3º Primaria", category: "Matemáticas", q: "¿Cuánto es 36 dividido entre 6?", options: ["5", "6", "7", "9"], answer: 1, hint: "¿Qué número multiplicado por 6 da 36?" },
+      { course: "3º Primaria", category: "Matemáticas", q: "¿Cómo se escribe con números 'cuatrocientos ocho'?", options: ["480", "408", "4008", "418"], answer: 1, hint: "4 centenas, 0 decenas y 8 unidades." },
+      { course: "3º Primaria", category: "Matemáticas", q: "Si un campo rectangular mide 10 metros de largo y 5 metros de ancho, ¿cuánto mide su perímetro?", options: ["15 metros", "30 metros", "50 metros", "20 metros"], answer: 1, hint: "Suma todos sus lados: 10 + 5 + 10 + 5." },
+      { course: "3º Primaria", category: "Matemáticas", q: "¿Qué fracción representa la mitad de una pizza o de un campo?", options: ["1/4", "1/2", "3/4", "2/3"], answer: 1, hint: "Dividido en 2 partes iguales y cogemos 1." },
+      { course: "3º Primaria", category: "Matemáticas", q: "¿Cuánto es 125 + 75?", options: ["190", "200", "210", "185"], answer: 1, hint: "25 + 75 forman una centena completa." },
+      { course: "3º Primaria", category: "Lengua", q: "¿Cuál de estas palabras es aguda y lleva tilde?", options: ["camión", "lápiz", "mesa", "árbol"], answer: 0, hint: "La fuerza de voz está en la última sílaba y acaba en 'n'." },
+      { course: "3º Primaria", category: "Lengua", q: "¿Cuál de estas palabras es llana?", options: ["sofá", "corazón", "zapatilla", "balón"], answer: 2, hint: "La sílaba tónica es '-ti-' (penúltima sílaba) y acaba en vocal." },
+      { course: "3º Primaria", category: "Lengua", q: "¿Qué es una familia de palabras?", options: ["Palabras con el mismo lexema o raíz como pan, panadero, panadería", "Palabras que empiezan por 'p'", "Palabras muy largas", "Nombres de animales"], answer: 0, hint: "Comparten la parte principal que guarda el significado." },
+      { course: "3º Primaria", category: "Lengua", q: "¿Cuál de estas opciones es una oración completa?", options: ["En el vestuario", "El equipo celebra el gol", "Muy rápido ayer", "Dos porterías grandes"], answer: 1, hint: "Tiene sujeto (el equipo) y predicado con verbo (celebra el gol)." },
+      { course: "3º Primaria", category: "Ciencias", q: "¿En qué tres estados principales puede encontrarse el agua?", options: ["Sólido, líquido y gaseoso", "Frío, templado y caliente", "Dulce, salado y turbio", "Río, mar y nube"], answer: 0, hint: "Hielo, agua del grifo y vapor." },
+      { course: "3º Primaria", category: "Ciencias", q: "¿Qué gases respiramos principalmente al inspirar y espirar?", options: ["Oxígeno y dióxido de carbono", "Oro y plata", "Helio y neón", "Hidrógeno y sal"], answer: 0, hint: "Tomamos oxígeno y expulsamos dióxido de carbono." },
+      { course: "3º Primaria", category: "Ciencias", q: "¿Qué tipo de animales tienen columna vertebral?", options: ["Invertebrados", "Vertebrados", "Insectos", "Moluscos"], answer: 1, hint: "Tienen esqueleto interno y espina dorsal." },
+      { course: "3º Primaria", category: "Geografía", q: "¿Cómo se llama el movimiento de la Tierra sobre sí misma que produce el día y la noche?", options: ["Traslación", "Rotación", "Órbita", "Inclinación"], answer: 1, hint: "Tarda unas 24 horas en dar una vuelta completa." },
+      { course: "3º Primaria", category: "Geografía", q: "¿Cuál de estos es un accidente geográfico de agua dulce en movimiento?", options: ["Un río", "Un océano", "Una cordillera", "Un cabo"], answer: 0, hint: "Corre desde su nacimiento hasta su desembocadura." },
+      { course: "3º Primaria", category: "Fútbol", q: "¿Cuánto suele durar cada parte de un partido de fútbol profesional?", options: ["30 minutos", "45 minutos", "60 minutos", "90 minutos cada parte"], answer: 1, hint: "Dos partes de 45 minutos suman 90 minutos." },
+      { course: "3º Primaria", category: "Fútbol", q: "¿Qué ocurre si un jugador recibe una segunda tarjeta amarilla en el mismo partido?", options: ["Le dan un punto extra", "Ve la tarjeta roja y es expulsado", "Pasa a ser árbitro", "No pasa nada"], answer: 1, hint: "Dos amarillas equivalen a una expulsión." },
+      { course: "3º Primaria", category: "Fútbol", q: "¿A qué distancia de la portería se lanza un penalti en fútbol 11?", options: ["A 5 metros", "A 11 metros (12 yardas)", "A 20 metros", "A 2 metros"], answer: 1, hint: "Son 11 metros exactos." },
+      { course: "3º Primaria", category: "Fútbol", q: "¿Cuál de estas posiciones suele jugar más cerca de la portería rival para marcar goles?", options: ["Delantero", "Central", "Portero", "Lateral defensivo"], answer: 0, hint: "Su misión principal es atacar y finalizar jugadas." },
+      { course: "3º Primaria", category: "Fútbol", q: "Si un equipo gana 3 partidos (3 puntos cada uno) y empata 1 (1 punto), ¿cuántos puntos tiene?", options: ["9 puntos", "10 puntos", "7 puntos", "12 puntos"], answer: 1, hint: "3 x 3 = 9, más 1 punto del empate." },
+      { course: "3º Primaria", category: "Matemáticas", q: "¿Cuánto es 9 x 9?", options: ["72", "81", "90", "89"], answer: 1, hint: "Es 9 veces 9." },
+      { course: "3º Primaria", category: "Matemáticas", q: "¿Cuántos meses tiene un año?", options: ["10 meses", "12 meses", "24 meses", "7 meses"], answer: 1, hint: "De enero a diciembre." },
+      { course: "3º Primaria", category: "Lengua", q: "¿Qué palabra es esdrújula?", options: ["futbol", "mágico", "balon", "pared"], answer: 1, hint: "La sílaba tónica es la antepenúltima ('má-') y siempre lleva tilde." },
+      { course: "3º Primaria", category: "Ciencias", q: "¿Qué alimento nos aporta más proteínas para los músculos?", options: ["Caramelos", "Huevos, carne, pescado o legumbres", "Refrescos con azúcar", "Chicles"], answer: 1, hint: "Son alimentos constructores que ayudan a crecer y reparar músculos." },
+      { course: "3º Primaria", category: "Fútbol", q: "¿Cómo se llama el pase rápido entre dos compañeros para superar a un rival?", options: ["Pared", "Córner", "Saque de meta", "Fuera de juego"], answer: 0, hint: "Se llama 'pared' porque el balón vuelve rápido como si rebotara." },
+
+      // ================= 4º PRIMARIA (9 años) - 25 preguntas =================
+      { course: "4º Primaria", category: "Matemáticas", q: "¿Cuánto es 14 x 6?", options: ["74", "84", "94", "64"], answer: 1, hint: "10 x 6 = 60; 4 x 6 = 24. Súmalos." },
+      { course: "4º Primaria", category: "Matemáticas", q: "¿Cuánto es 84 dividido entre 4?", options: ["21", "24", "18", "22"], answer: 0, hint: "80 entre 4 es 20 y 4 entre 4 es 1." },
+      { course: "4º Primaria", category: "Matemáticas", q: "¿Cuál es el valor de la cifra 7 en el número 47.320?", options: ["70", "700", "7.000", "70.000"], answer: 2, hint: "Ocupa el lugar de las unidades de millar." },
+      { course: "4º Primaria", category: "Matemáticas", q: "¿Qué fracción es mayor: 3/4 o 1/4?", options: ["3/4", "1/4", "Son iguales", "No se pueden comparar"], answer: 0, hint: "Tienen el mismo denominador (4): tres partes son más que una." },
+      { course: "4º Primaria", category: "Matemáticas", q: "Si una botella de agua tiene 1 litro y medio, ¿cuántos mililitros son?", options: ["500 ml", "1.000 ml", "1.500 ml", "2.000 ml"], answer: 2, hint: "1 litro son 1.000 ml y medio litro son 500 ml." },
+      { course: "4º Primaria", category: "Matemáticas", q: "¿Cómo se llama un ángulo que mide exactamente 90 grados?", options: ["Ángulo agudo", "Ángulo recto", "Ángulo obtuso", "Ángulo llano"], answer: 1, hint: "Es como la esquina de un cuadrado o del córner." },
+      { course: "4º Primaria", category: "Lengua", q: "¿Qué tipo de palabra es 'rápidamente'?", options: ["Un adverbio", "Un artículo", "Una preposición", "Una interjección"], answer: 0, hint: "Indica modo (cómo se hace algo) y está formado con el sufijo '-mente'." },
+      { course: "4º Primaria", category: "Lengua", q: "¿Qué es un campo semántico?", options: ["Palabras de la misma categoría o tema como balón, portería, árbitro, córner", "Palabras con la misma letra inicial", "Palabras con tilde", "Sinónimos exactos"], answer: 0, hint: "Todas pertenecen al mundo del fútbol." },
+      { course: "4º Primaria", category: "Lengua", q: "En la oración 'Los jugadores entrenaron ayer', ¿cuál es el núcleo del predicado?", options: ["Los", "jugadores", "entrenaron", "ayer"], answer: 2, hint: "El núcleo del predicado es siempre el verbo." },
+      { course: "4º Primaria", category: "Lengua", q: "¿Qué palabra contiene un diptongo?", options: ["juego", "árbol", "camión", "balón"], answer: 0, hint: "Dos vocales juntas en la misma sílaba ('jue-go')." },
+      { course: "4º Primaria", category: "Ciencias", q: "¿Qué sistema de nuestro cuerpo se encarga de digerir los alimentos?", options: ["Sistema digestivo", "Sistema circulatorio", "Sistema nervioso", "Sistema respiratorio"], answer: 0, hint: "Incluye el estómago y los intestinos." },
+      { course: "4º Primaria", category: "Ciencias", q: "¿Qué parte de una flor se transforma normalmente en fruto?", options: ["El pétalo", "El ovario", "El sépalo", "El tallo"], answer: 1, hint: "Está en el interior de la flor tras la polinización." },
+      { course: "4º Primaria", category: "Ciencias", q: "¿Qué es un ecosistema?", options: ["El conjunto de seres vivos, el medio físico y las relaciones entre ellos", "Solo un bosque sin animales", "Un mapa de carreteras", "Un tipo de roca"], answer: 0, hint: "Une seres vivos (biocenosis) y lugar/condiciones (biotopo)." },
+      { course: "4º Primaria", category: "Geografía", q: "¿Qué línea imaginaria divide la Tierra en hemisferio norte y hemisferio sur?", options: ["El Ecuador", "El meridiano de Greenwich", "El trópico de Cáncer", "El círculo polar"], answer: 0, hint: "Está a 0 grados de latitud." },
+      { course: "4º Primaria", category: "Geografía", q: "¿Cuántos continentes se suelen estudiar en primaria?", options: ["3 continentes", "5 continentes", "6 continentes", "2 continentes"], answer: 2, hint: "África, América, Antártida, Asia, Europa y Oceanía." },
+      { course: "4º Primaria", category: "Historia", q: "¿Qué etapa de la historia empieza con la invención de la escritura?", options: ["La Prehistoria", "La Edad Antigua", "La Edad Media", "La Edad Contemporánea"], answer: 1, hint: "Antes de la escritura está la Prehistoria." },
+      { course: "4º Primaria", category: "Fútbol", q: "¿Cada cuántos años se suele celebrar el Mundial de Fútbol de selecciones?", options: ["Cada año", "Cada 2 años", "Cada 4 años", "Cada 10 años"], answer: 2, hint: "Es un ciclo de cuatro años." },
+      { course: "4º Primaria", category: "Fútbol", q: "¿Qué significa que un jugador esté en 'fuera de juego'?", options: ["Que está lesionado", "Que está adelantado respecto al balón y a los defensores rivales al recibir el pase", "Que ha sacado un córner", "Que está en el banquillo"], answer: 1, hint: "Tiene que ver con la posición adelantada en el momento del pase." },
+      { course: "4º Primaria", category: "Fútbol", q: "¿Cuál de estos es un pase largo que cambia el juego de un lado a otro del campo?", options: ["Cambio de orientación", "Autogol", "Saque neutral", "Tanda de penaltis"], answer: 0, hint: "Orienta el ataque hacia la banda opuesta." },
+      { course: "4º Primaria", category: "Fútbol", q: "Si un equipo marca 4 goles y encaja 1, ¿cuál es su diferencia de goles en ese partido?", options: ["+3", "-3", "+5", "+1"], answer: 0, hint: "Goles a favor (4) menos goles en contra (1)." },
+      { course: "4º Primaria", category: "Matemáticas", q: "¿Cuánto es 25 x 4?", options: ["75", "100", "125", "90"], answer: 1, hint: "Cuatro monedas de 25 céntimos hacen 1 euro (100 céntimos)." },
+      { course: "4º Primaria", category: "Matemáticas", q: "¿Cuánto es 3/4 de 20?", options: ["5", "10", "15", "12"], answer: 2, hint: "Divide 20 entre 4 (=5) y multiplica por 3." },
+      { course: "4º Primaria", category: "Lengua", q: "¿Cuál de estas palabras es un pronombre personal?", options: ["nosotros", "portería", "rápido", "debajo"], answer: 0, hint: "Sustituye a un grupo de personas que incluye a quien habla." },
+      { course: "4º Primaria", category: "Ciencias", q: "¿Qué material es un buen conductor de la electricidad?", options: ["El cobre", "La madera seca", "El plástico", "La goma"], answer: 0, hint: "Se usa mucho en los cables eléctricos." },
+      { course: "4º Primaria", category: "Fútbol", q: "¿Qué es una 'vaselina' o 'sombrero' en fútbol?", options: ["Un golpeo por alto para superar al portero", "Un saque de banda", "Una falta en el centro", "Un tipo de bota"], answer: 0, hint: "El balón sube suavemente por encima del portero." }
+    ];
+
+    // Verificación rápida de seguridad en consola de que hay exactamente 100 preguntas
+    console.assert(QUESTION_BANK.length === 100, `Se esperaban 100 preguntas, hay ${QUESTION_BANK.length}`);
+
+    // Escalera de puntos (de abajo hacia arriba en puntuación)
+    const POINT_LADDER = [100, 150, 200, 250, 300, 400, 500, 750, 1000, 1500];
+
+    // Estado del juego
+    const state = {
+      teamNames: ["Equipo Relámpago", "Equipo Trueno"],
+      scores: [0, 0],
+      streaks: [0, 0],
+      lifelines: [
+        { fiftyFifty: true, coach: true, doubleGoal: true },
+        { fiftyFifty: true, coach: true, doubleGoal: true }
+      ],
+      currentTeam: 0,
+      totalQuestionsInMatch: 16,
+      gradeFilter: "ALL",
+      usedIds: new Set(),
+      matchQuestions: [],
+      questionIndex: 0,
+      activeDoubleGoal: false,
+      answeredCurrent: false,
+      soundEnabled: true,
+      audioReady: false
+    };
+
+    // Referencias del DOM
+    const els = {
+      cardTeam0: document.getElementById("card-team-0"),
+      cardTeam1: document.getElementById("card-team-1"),
+      nameTeam0: document.getElementById("name-team-0"),
+      nameTeam1: document.getElementById("name-team-1"),
+      badgeTurn0: document.getElementById("badge-turn-0"),
+      badgeTurn1: document.getElementById("badge-turn-1"),
+      streakTeam0: document.getElementById("streak-team-0"),
+      streakTeam1: document.getElementById("streak-team-1"),
+      scoreTeam0: document.getElementById("score-team-0"),
+      scoreTeam1: document.getElementById("score-team-1"),
+      qCounter: document.getElementById("q-counter"),
+      qCourse: document.getElementById("q-course"),
+      qCategory: document.getElementById("q-category"),
+      qPoints: document.getElementById("q-points"),
+      lifelineTeamName: document.getElementById("lifeline-team-name"),
+      btn5050: document.getElementById("btn-5050"),
+      btnCoach: document.getElementById("btn-coach"),
+      btnDouble: document.getElementById("btn-double"),
+      hintBox: document.getElementById("hint-box"),
+      hintText: document.getElementById("hint-text"),
+      qText: document.getElementById("q-text"),
+      optionsGrid: document.getElementById("options-grid"),
+      feedbackBar: document.getElementById("feedback-bar"),
+      feedbackTitle: document.getElementById("feedback-title"),
+      feedbackDetail: document.getElementById("feedback-detail"),
+      btnNext: document.getElementById("btn-next"),
+      ladderList: document.getElementById("ladder-list"),
+      bankRemaining: document.getElementById("bank-remaining"),
+      btnSound: document.getElementById("btn-sound"),
+      soundIcon: document.getElementById("sound-icon"),
+      soundLabel: document.getElementById("sound-label"),
+      btnSetupModal: document.getElementById("btn-setup-modal"),
+      modalSetup: document.getElementById("modal-setup"),
+      btnCloseModal: document.getElementById("btn-close-modal"),
+      btnCancelModal: document.getElementById("btn-cancel-modal"),
+      formSetup: document.getElementById("form-setup"),
+      inputTeam0: document.getElementById("input-team-0"),
+      inputTeam1: document.getElementById("input-team-1"),
+      selectLength: document.getElementById("select-length"),
+      selectGrade: document.getElementById("select-grade"),
+      modalGameover: document.getElementById("modal-gameover"),
+      gameoverTitle: document.getElementById("gameover-title"),
+      gameoverSubtitle: document.getElementById("gameover-subtitle"),
+      finalName0: document.getElementById("final-name-0"),
+      finalName1: document.getElementById("final-name-1"),
+      finalScore0: document.getElementById("final-score-0"),
+      finalScore1: document.getElementById("final-score-1"),
+      btnPlayAgain: document.getElementById("btn-play-again"),
+      btnOpenConfigEnd: document.getElementById("btn-open-config-end")
+    };
+
+    // ================= EFECTOS DE SONIDO CON TONE.JS =================
+    let synth = null;
+
+    async function ensureAudio() {
+      if (!state.soundEnabled) return;
+      try {
+        if (!state.audioReady && typeof Tone !== "undefined") {
+          await Tone.start();
+          synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.01, decay: 0.12, sustain: 0.1, release: 0.25 }
+          }).toDestination();
+          synth.volume.value = -8;
+          state.audioReady = true;
+        }
+      } catch (err) {
+        console.warn("Audio no disponible aún:", err);
+      }
+    }
+
+    async function playSound(type) {
+      if (!state.soundEnabled) return;
+      await ensureAudio();
+      if (!synth) return;
+
+      try {
+        const now = Tone.now();
+        if (type === "correct") {
+          synth.triggerAttackRelease(["C5", "E5", "G5"], "8n", now);
+          synth.triggerAttackRelease("C6", "8n", now + 0.12);
+        } else if (type === "wrong") {
+          synth.triggerAttackRelease(["E3", "Eb3"], "4n", now);
+        } else if (type === "lifeline") {
+          synth.triggerAttackRelease(["G4", "B4", "D5"], "16n", now);
+        } else if (type === "win") {
+          synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "8n", now);
+        }
+      } catch (e) {
+        // Silencioso si el navegador bloquea el audio
+      }
+    }
+
+    // ================= LÓGICA DE SELECCIÓN SIN REPETICIÓN =================
+    function pickMatchQuestions() {
+      // Asignar IDs únicos estables a cada pregunta del banco
+      const indexedBank = QUESTION_BANK.map((item, idx) => ({ ...item, id: idx }));
+
+      // Si ya se usaron casi todas las preguntas del filtro, reiniciamos ese filtro para seguir jugando
+      let pool = indexedBank.filter(item => {
+        const matchesGrade = state.gradeFilter === "ALL" || item.course === state.gradeFilter;
+        return matchesGrade && !state.usedIds.has(item.id);
+      });
+
+      if (pool.length < state.totalQuestionsInMatch) {
+        // Reiniciar IDs usados de ese filtro si no alcanzan
+        indexedBank.forEach(item => {
+          if (state.gradeFilter === "ALL" || item.course === state.gradeFilter) {
+            state.usedIds.delete(item.id);
+          }
+        });
+        pool = indexedBank.filter(item => state.gradeFilter === "ALL" || item.course === state.gradeFilter);
+      }
+
+      // Mezclar aleatoriamente (Fisher-Yates)
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+
+      const selected = pool.slice(0, state.totalQuestionsInMatch);
+      selected.forEach(q => state.usedIds.add(q.id));
+      return selected;
+    }
+
+    function getCurrentQuestionPoints() {
+      const ladderIdx = Math.min(state.questionIndex, POINT_LADDER.length - 1);
+      const basePts = POINT_LADDER[ladderIdx];
+      return state.activeDoubleGoal ? basePts * 2 : basePts;
+    }
+
+    // ================= RENDERIZADO DE INTERFAZ =================
+    function renderScoreboard() {
+      els.nameTeam0.textContent = state.teamNames[0];
+      els.nameTeam1.textContent = state.teamNames[1];
+      els.scoreTeam0.textContent = state.scores[0];
+      els.scoreTeam1.textContent = state.scores[1];
+      els.streakTeam0.textContent = `Racha: ${state.streaks[0]} ${state.streaks[0] === 1 ? "acierto" : "aciertos"}`;
+      els.streakTeam1.textContent = `Racha: ${state.streaks[1]} ${state.streaks[1] === 1 ? "acierto" : "aciertos"}`;
+
+      const isT0 = state.currentTeam === 0;
+      els.cardTeam0.className = isT0
+        ? "rounded-2xl p-3.5 sm:p-4 border-2 transition-all duration-300 bg-emerald-950/50 border-emerald-400 shadow-lg shadow-emerald-950/60 flex items-center justify-between gap-3"
+        : "rounded-2xl p-3.5 sm:p-4 border-2 transition-all duration-300 bg-slate-900/75 border-slate-800 opacity-85 flex items-center justify-between gap-3";
+
+      els.cardTeam1.className = !isT0
+        ? "rounded-2xl p-3.5 sm:p-4 border-2 transition-all duration-300 bg-sky-950/50 border-sky-400 shadow-lg shadow-sky-950/60 flex items-center justify-between gap-3"
+        : "rounded-2xl p-3.5 sm:p-4 border-2 transition-all duration-300 bg-slate-900/75 border-slate-800 opacity-85 flex items-center justify-between gap-3";
+
+      els.badgeTurn0.classList.toggle("hidden", !isT0);
+      els.badgeTurn1.classList.toggle("hidden", isT0);
+    }
+
+    function renderLadder() {
+      const currentLevel = Math.min(state.questionIndex, POINT_LADDER.length - 1);
+      const remaining = QUESTION_BANK.length - state.usedIds.size;
+      els.bankRemaining.textContent = `${remaining} sin usar`;
+
+      // Mostrar de mayor a menor puntuación como en el concurso televisivo
+      const rows = [];
+      for (let i = POINT_LADDER.length - 1; i >= 0; i--) {
+        const pts = POINT_LADDER[i];
+        const isCurrent = i === currentLevel;
+        const isPassed = i < currentLevel;
+        const isMilestone = i === 4 || i === 9;
+
+        let rowClass = "flex items-center justify-between px-3 py-1.5 rounded-xl border transition ";
+        if (isCurrent) {
+          rowClass += "bg-amber-400 text-slate-950 border-amber-300 font-bold shadow-md scale-[1.02]";
+        } else if (isPassed) {
+          rowClass += "bg-emerald-500/15 text-emerald-300 border-emerald-500/25 font-medium";
+        } else if (isMilestone) {
+          rowClass += "bg-slate-800/90 text-amber-200 border-amber-400/30 font-semibold";
+        } else {
+          rowClass += "bg-slate-800/40 text-slate-400 border-slate-800";
+        }
+
+        rows.push(`
+          <li class="${rowClass}">
+            <span>Nivel ${i + 1}${isMilestone ? " ★" : ""}</span>
+            <span class="font-display">${pts} pts</span>
+          </li>
+        `);
+      }
+      els.ladderList.innerHTML = rows.join("");
+    }
+
+    function renderLifelines() {
+      const teamLifelines = state.lifelines[state.currentTeam];
+      els.lifelineTeamName.textContent = state.teamNames[state.currentTeam];
+
+      els.btn5050.disabled = !teamLifelines.fiftyFifty || state.answeredCurrent;
+      els.btnCoach.disabled = !teamLifelines.coach || state.answeredCurrent;
+      els.btnDouble.disabled = !teamLifelines.doubleGoal || state.answeredCurrent || state.activeDoubleGoal;
+
+      if (state.activeDoubleGoal) {
+        els.btnDouble.classList.add("ring-2", "ring-amber-300", "bg-amber-400/30");
+      } else {
+        els.btnDouble.classList.remove("ring-2", "ring-amber-300", "bg-amber-400/30");
+      }
+    }
+
+    function renderQuestion() {
+      const q = state.matchQuestions[state.questionIndex];
+      if (!q) return;
+
+      state.answeredCurrent = false;
+      state.activeDoubleGoal = false;
+
+      els.qCounter.textContent = `Pregunta ${state.questionIndex + 1} / ${state.matchQuestions.length}`;
+      els.qCourse.textContent = q.course;
+      els.qCategory.textContent = q.category;
+      els.qPoints.textContent = `+${getCurrentQuestionPoints()} pts`;
+      els.qText.textContent = q.q;
+
+      // Ocultar pista y barra de respuesta
+      els.hintBox.classList.add("hidden");
+      els.hintText.textContent = "";
+      els.feedbackBar.classList.add("hidden");
+
+      // Dibujar opciones A, B, C, D
+      const letters = ["A", "B", "C", "D"];
+      els.optionsGrid.innerHTML = q.options.map((optText, idx) => `
+        <button
+          type="button"
+          data-option-index="${idx}"
+          class="option-btn group w-full text-left p-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 border-2 border-slate-700 hover:border-amber-400/70 flex items-center gap-3.5 shadow-md cursor-pointer"
+        >
+          <span class="w-9 h-9 rounded-xl bg-slate-900 group-hover:bg-amber-400 group-hover:text-slate-950 border border-slate-600 flex items-center justify-center font-display font-bold text-amber-300 transition shrink-0">
+            ${letters[idx]}
+          </span>
+          <span class="text-sm sm:text-base md:text-lg font-medium text-white leading-snug">
+            ${escapeHtml(optText)}
+          </span>
+        </button>
+      `).join("");
+
+      // Añadir eventos de clic a cada opción
+      const buttons = els.optionsGrid.querySelectorAll("button[data-option-index]");
+      buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const chosenIdx = Number(btn.getAttribute("data-option-index"));
+          handleAnswer(chosenIdx);
+        });
+      });
+
+      renderScoreboard();
+      renderLadder();
+      renderLifelines();
+    }
+
+    // ================= MANEJO DE RESPUESTAS Y COMODINES =================
+    async function handleAnswer(chosenIdx) {
+      if (state.answeredCurrent) return;
+      state.answeredCurrent = true;
+
+      const q = state.matchQuestions[state.questionIndex];
+      const teamIdx = state.currentTeam;
+      const isCorrect = chosenIdx === q.answer;
+      const basePoints = getCurrentQuestionPoints();
+
+      // Deshabilitar botones de opciones y comodines
+      const optionButtons = els.optionsGrid.querySelectorAll("button[data-option-index]");
+      optionButtons.forEach((btn, idx) => {
+        btn.disabled = true;
+        btn.classList.remove("hover:bg-slate-700/90", "hover:border-amber-400/70", "hover:-translate-y-0.5");
+        if (idx === q.answer) {
+          btn.classList.remove("bg-slate-800/90", "border-slate-700");
+          btn.classList.add("bg-emerald-600/35", "border-emerald-400", "ring-2", "ring-emerald-400/50");
+        } else if (idx === chosenIdx && !isCorrect) {
+          btn.classList.remove("bg-slate-800/90", "border-slate-700");
+          btn.classList.add("bg-rose-600/35", "border-rose-400");
+        } else {
+          btn.classList.add("opacity-50");
+        }
+      });
+
+      renderLifelines();
+
+      els.feedbackBar.classList.remove("hidden");
+
+      if (isCorrect) {
+        state.streaks[teamIdx] += 1;
+        // Bonus de racha a partir de 2 aciertos seguidos
+        const streakBonus = state.streaks[teamIdx] >= 2 ? 25 * (state.streaks[teamIdx] - 1) : 0;
+        const totalEarned = basePoints + streakBonus;
+        state.scores[teamIdx] += totalEarned;
+
+        await playSound("correct");
+
+        els.feedbackBar.className = "mt-5 p-4 rounded-2xl border bg-emerald-950/60 border-emerald-400/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pop";
+        els.feedbackTitle.className = "font-display text-lg sm:text-xl font-bold text-emerald-300";
+        els.feedbackTitle.textContent = `¡GOLAZO de ${state.teamNames[teamIdx]}! (+${totalEarned} pts)`;
+
+        let detail = `Respuesta correcta: "${q.options[q.answer]}".`;
+        if (state.activeDoubleGoal) detail += " ¡Comodín Doble Gol activado!";
+        if (streakBonus > 0) detail += ` ¡Bonus de racha +${streakBonus} pts!`;
+        els.feedbackDetail.textContent = detail;
+      } else {
+        state.streaks[teamIdx] = 0;
+        await playSound("wrong");
+
+        els.feedbackBar.className = "mt-5 p-4 rounded-2xl border bg-rose-950/60 border-rose-400/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-pop";
+        els.feedbackTitle.className = "font-display text-lg sm:text-xl font-bold text-rose-300";
+        els.feedbackTitle.textContent = `¡Al palo! Esta vez no sumó ${state.teamNames[teamIdx]}`;
+        els.feedbackDetail.textContent = `La respuesta correcta era "${q.options[q.answer]}". ¡Ánimo, el siguiente turno es vuestro!`;
+      }
+
+      els.btnNext.textContent = state.questionIndex + 1 >= state.matchQuestions.length
+        ? "Ver marcador final 🏆"
+        : "Siguiente pregunta →";
+
+      renderScoreboard();
+    }
+
+    // Comodín 50:50
+    async function useFiftyFifty() {
+      const teamLifelines = state.lifelines[state.currentTeam];
+      if (!teamLifelines.fiftyFifty || state.answeredCurrent) return;
+
+      teamLifelines.fiftyFifty = false;
+      await playSound("lifeline");
+
+      const q = state.matchQuestions[state.questionIndex];
+      const wrongIndices = [0, 1, 2, 3].filter(i => i !== q.answer);
+      // Mezclar incorrectas y ocultar 2
+      wrongIndices.sort(() => Math.random() - 0.5);
+      const toHide = new Set(wrongIndices.slice(0, 2));
+
+      const buttons = els.optionsGrid.querySelectorAll("button[data-option-index]");
+      buttons.forEach(btn => {
+        const idx = Number(btn.getAttribute("data-option-index"));
+        if (toHide.has(idx)) {
+          btn.disabled = true;
+          btn.classList.add("opacity-20", "line-through", "pointer-events-none");
+        }
+      });
+
+      renderLifelines();
+    }
+
+    // Comodín Pista del Míster
+    async function useCoachHint() {
+      const teamLifelines = state.lifelines[state.currentTeam];
+      if (!teamLifelines.coach || state.answeredCurrent) return;
+
+      teamLifelines.coach = false;
+      await playSound("lifeline");
+
+      const q = state.matchQuestions[state.questionIndex];
+      els.hintText.textContent = q.hint;
+      els.hintBox.classList.remove("hidden");
+
+      renderLifelines();
+    }
+
+    // Comodín Doble Gol (x2)
+    async function useDoubleGoal() {
+      const teamLifelines = state.lifelines[state.currentTeam];
+      if (!teamLifelines.doubleGoal || state.answeredCurrent || state.activeDoubleGoal) return;
+
+      teamLifelines.doubleGoal = false;
+      state.activeDoubleGoal = true;
+      await playSound("lifeline");
+
+      els.qPoints.textContent = `+${getCurrentQuestionPoints()} pts (x2)`;
+      els.qPoints.classList.add("text-amber-200");
+      renderLifelines();
+    }
+
+    // Avanzar turno o finalizar partido
+    function handleNextQuestion() {
+      if (state.questionIndex + 1 < state.matchQuestions.length) {
+        state.questionIndex += 1;
+        // Alternar el turno entre los dos equipos
+        state.currentTeam = state.currentTeam === 0 ? 1 : 0;
+        renderQuestion();
+      } else {
+        showGameOver();
+      }
+    }
+
+    async function showGameOver() {
+      await playSound("win");
+      const [s0, s1] = state.scores;
+      const [n0, n1] = state.teamNames;
+
+      els.finalName0.textContent = n0;
+      els.finalName1.textContent = n1;
+      els.finalScore0.textContent = s0;
+      els.finalScore1.textContent = s1;
+
+      if (s0 > s1) {
+        els.gameoverTitle.textContent = `🏆 ¡Campeón: ${n0}!`;
+        els.gameoverSubtitle.textContent = `Gran partido bajo la lluvia con ${s0} puntos frente a ${s1}.`;
+      } else if (s1 > s0) {
+        els.gameoverTitle.textContent = `🏆 ¡Campeón: ${n1}!`;
+        els.gameoverSubtitle.textContent = `Gran partido bajo la lluvia con ${s1} puntos frente a ${s0}.`;
+      } else {
+        els.gameoverTitle.textContent = "⚽ ¡Empate de Campeones!";
+        els.gameoverSubtitle.textContent = `¡Máxima igualdad con ${s0} puntos cada equipo!`;
+      }
+
+      els.modalGameover.classList.remove("hidden");
+      els.modalGameover.classList.add("flex");
+    }
+
+    // Iniciar o reiniciar un partido
+    function startNewMatch() {
+      state.scores = [0, 0];
+      state.streaks = [0, 0];
+      state.lifelines = [
+        { fiftyFifty: true, coach: true, doubleGoal: true },
+        { fiftyFifty: true, coach: true, doubleGoal: true }
+      ];
+      state.currentTeam = 0;
+      state.questionIndex = 0;
+      state.matchQuestions = pickMatchQuestions();
+
+      els.modalGameover.classList.add("hidden");
+      els.modalGameover.classList.remove("flex");
+      els.modalSetup.classList.add("hidden");
+      els.modalSetup.classList.remove("flex");
+
+      renderQuestion();
+    }
+
+    // Escapar HTML por seguridad
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // ================= EVENTOS DE INTERFAZ =================
+    els.btn5050.addEventListener("click", useFiftyFifty);
+    els.btnCoach.addEventListener("click", useCoachHint);
+    els.btnDouble.addEventListener("click", useDoubleGoal);
+    els.btnNext.addEventListener("click", handleNextQuestion);
+
+    els.btnSound.addEventListener("click", async () => {
+      state.soundEnabled = !state.soundEnabled;
+      els.soundIcon.textContent = state.soundEnabled ? "🔊" : "🔇";
+      els.soundLabel.textContent = state.soundEnabled ? "Sonido ON" : "Sonido OFF";
+      if (state.soundEnabled) {
+        await ensureAudio();
+      }
+    });
+
+    function openSetupModal() {
+      els.inputTeam0.value = state.teamNames[0];
+      els.inputTeam1.value = state.teamNames[1];
+      els.selectLength.value = String(state.totalQuestionsInMatch);
+      els.selectGrade.value = state.gradeFilter;
+      els.modalSetup.classList.remove("hidden");
+      els.modalSetup.classList.add("flex");
+    }
+
+    function closeSetupModal() {
+      els.modalSetup.classList.add("hidden");
+      els.modalSetup.classList.remove("flex");
+    }
+
+    els.btnSetupModal.addEventListener("click", openSetupModal);
+    els.btnCloseModal.addEventListener("click", closeSetupModal);
+    els.btnCancelModal.addEventListener("click", closeSetupModal);
+
+    els.formSetup.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const t0 = els.inputTeam0.value.trim() || "Equipo Relámpago";
+      const t1 = els.inputTeam1.value.trim() || "Equipo Trueno";
+      state.teamNames = [t0, t1];
+      state.totalQuestionsInMatch = Number(els.selectLength.value);
+      state.gradeFilter = els.selectGrade.value;
+      startNewMatch();
+    });
+
+    els.btnPlayAgain.addEventListener("click", startNewMatch);
+    els.btnOpenConfigEnd.addEventListener("click", () => {
+      els.modalGameover.classList.add("hidden");
+      els.modalGameover.classList.remove("flex");
+      openSetupModal();
+    });
+
+    // Atajos de teclado opcionales (1-4 o A-D para responder, Enter para siguiente)
+    document.addEventListener("keydown", (e) => {
+      if (!els.modalSetup.classList.contains("hidden") || !els.modalGameover.classList.contains("hidden")) {
+        return;
+      }
+      const key = e.key.toUpperCase();
+      const map = { "1": 0, "A": 0, "2": 1, "B": 1, "3": 2, "C": 2, "4": 3, "D": 3 };
+      if (!state.answeredCurrent && Object.prototype.hasOwnProperty.call(map, key)) {
+        handleAnswer(map[key]);
+      } else if (state.answeredCurrent && e.key === "Enter") {
+        handleNextQuestion();
+      }
+    });
+
+    // Arrancar primer partido al cargar la página
+    window.addEventListener("DOMContentLoaded", () => {
+      startNewMatch();
+    });
+  </script>
+</body>
+</html>
